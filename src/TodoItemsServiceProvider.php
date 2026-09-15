@@ -55,6 +55,20 @@ class TodoItemsServiceProvider extends ServiceProvider
         $this->publishes([
             __DIR__.'/../config/todo-items.php' => config_path('todo-items.php'),
         ], 'todo-items-config');
+
+        // Views for the optional Filament page. Loaded unconditionally because
+        // a view namespace costs nothing when unused, and registering it here
+        // means a subclass works without the consumer wiring anything.
+        //
+        // The page itself is deliberately NOT registered: see TodoListPage. A
+        // page this package added to a panel could not be made conditional by
+        // the project, and conditional discovery is what allows this package to
+        // be require-dev and therefore absent in production.
+        $this->loadViewsFrom(__DIR__.'/../resources/views', 'todo-items');
+
+        $this->publishes([
+            __DIR__.'/../resources/views' => resource_path('views/vendor/todo-items'),
+        ], 'todo-items-views');
     }
 
     /**

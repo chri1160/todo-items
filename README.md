@@ -95,6 +95,59 @@ production, which fatals if the classes aren't installed. `require-dev` is a tig
 available only when the commands are the sole consumer; it is actively wrong the moment
 anything in the app reads the items.
 
+## The admin page (optional)
+
+`Timot\TodoItems\Filament\TodoListPage` is a read-only Filament page over the list — search,
+filter by section and status, and read an item's body without leaving the browser. It is
+**suggested, not required**: `filament/filament` appears in `suggest`, so a command-only
+consumer's dependency graph is unchanged.
+
+**Subclass it; the package does not register it.** That is deliberate, and it is what keeps the
+`require-dev` install available:
+
+```php
+namespace App\Filament\Admin\Dev;          // a directory discovered only in development
+
+use Timot\TodoItems\Filament\TodoListPage;
+
+class Todos extends TodoListPage
+{
+    public static function canAccess(): bool
+    {
+        return (bool) auth()->user()?->isSuperAdmin();
+    }
+}
+```
+
+Then discover that directory only where the package exists:
+
+```php
+->when(
+    app()->environment(['local', 'testing']),
+    fn (Panel $panel) => $panel->discoverPages(
+        in: app_path('Filament/Admin/Dev'),
+        for: 'App\Filament\Admin\Dev',
+    ),
+)
+```
+
+**Discovery is what must be conditional, not access.** `canAccess()` gates access while discovery
+still *loads* the class, and loading is exactly what fails when the package is absent from a
+production install — a gate that runs after the fatal is not a gate. Note also that
+`discoverPages()` is typed `string $in`, so the obvious "pass null in production" is a TypeError
+rather than a no-op; `Panel::when()` is the seam.
+
+Two hooks:
+
+- **`canAccess()`** has no sensible default, so the base returns **false**. Forget it and the page
+  simply does not appear — noticed at once in development, harmless if not. The opposite default
+  fails silently and in the dangerous direction. (Abstract would be better; PHP forbids
+  re-declaring an inherited concrete method as abstract.)
+- **`icons()`** returns five roles — `page`, `available`, `claimed`, `done`, `view` — defaulting to
+  Heroicons. Override it to map them onto a project's own icon registry.
+
+Views publish with `--tag=todo-items-views` if a project wants to change the markup.
+
 ## Configuration
 
 Defaults to `todo/` and `TODO.md` at the project root, with registries under the main tree's
@@ -110,6 +163,9 @@ php artisan vendor:publish --tag=todo-items-config
 composer install
 vendor/bin/phpunit
 ```
+
+Filament is a dev dependency here so the page's tests can run; those tests skip if it is absent.
+Everything resolves from Packagist, so a clone needs no credentials.
 
 The gating tests assert *membership* as well as behaviour: a sixth command that lands in
 `src/Commands` without extending `TodoCommand` fails the suite, because nothing about adding a
