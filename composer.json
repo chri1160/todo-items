@@ -3,15 +3,26 @@
     "description": "A file-backed TODO list for repositories worked by several agents at once: one item per file, a generated index, ids that never collide across branches, and claims so two agents don't start the same thing.",
     "type": "library",
     "license": "MIT",
+    "repositories": [
+        {
+            "name": "filament",
+            "type": "composer",
+            "url": "https://packages.filamentphp.com/composer"
+        }
+    ],
     "require": {
         "php": "^8.2",
         "illuminate/console": "^11.0|^12.0|^13.0",
         "illuminate/support": "^11.0|^12.0|^13.0"
     },
     "require-dev": {
+        "filament/filament": "^4.0|^5.0",
         "laravel/pint": "^1.13",
         "orchestra/testbench": "^9.0|^10.0|^11.0",
         "phpunit/phpunit": "^11.0|^12.0"
+    },
+    "suggest": {
+        "filament/filament": "To subclass TodoListPage and browse the list in a Filament panel (v4 or v5)."
     },
     "autoload": {
         "psr-4": {
