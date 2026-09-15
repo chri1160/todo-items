@@ -75,10 +75,27 @@ abstract class TodoListPage extends Page implements HasTable
 
     protected static ?string $navigationLabel = 'TODO List';
 
-    protected static string|UnitEnum|null $navigationGroup = 'Miscellaneous';
+    /**
+     * No group by default.
+     *
+     * This said `Miscellaneous` until v1.2.1, which was the navigation group of
+     * the project the page was extracted from — a name that means nothing in
+     * another panel, and that every consumer therefore had to override. A
+     * default that every consumer must replace is not a default. Set it in the
+     * subclass, where the panel's own group names are known.
+     */
+    protected static string|UnitEnum|null $navigationGroup = null;
 
     protected static ?string $title = 'TODO List';
 
+    /**
+     * The page's URL, fixed rather than derived.
+     *
+     * Filament would otherwise slugify the subclass name, so a project that
+     * called its subclass anything but `Todos` would silently get a different
+     * URL from the one it had. Declaring it here makes `/todos` the answer for
+     * every consumer regardless of naming; override it to move the page.
+     */
     protected static ?string $slug = 'todos';
 
     protected string $view = 'todo-items::page';
