@@ -2,7 +2,6 @@
 
 namespace Timot\TodoItems\Commands;
 
-use Illuminate\Console\Command;
 use RuntimeException;
 use Timot\TodoItems\Support\AgentSession;
 use Timot\TodoItems\TodoClaims;
@@ -21,7 +20,7 @@ use Timot\TodoItems\TodoRepository;
  * Claiming is not assignment by a human, and it is not a lock on the files: it
  * is an announcement, so the next agent looks further down the list.
  */
-class ClaimCommand extends Command
+class ClaimCommand extends TodoCommand
 {
     protected $signature = 'todo:claim
         {id? : Item id, with or without leading zeros; omit to take the next available item}

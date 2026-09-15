@@ -75,6 +75,26 @@ git's own pointer file rather than matching a path convention, because the two p
 grew in lay their worktrees out differently and a convention correct in one is silently wrong
 in the other.
 
+**The commands are absent outside development, not hidden.** Every command writes to the
+repository's working tree, so there is no deployed environment where running one can do
+anything: the tree is read-only at best, and where it isn't, the edit is discarded by the next
+deploy while the operator is told it worked. The failure that matters isn't a crash — it's
+`todo:done` reporting success in production and the item silently un-closing itself on the
+next deploy. So the gate is Symfony's `isEnabled()`, which drops a command during
+*registration*: `artisan todo:done` in production reports an undefined command rather than
+running. Hiding it would leave it runnable by anyone who types the name. The environments are
+`local` and `testing` by default (`testing` because a consuming project's suite drives these
+against a temp tree) and configurable via `todo-items.environments`.
+
+**Install under `require`, not `require-dev`** — the gate above is what makes that safe. This
+package is two things: five commands, which are development-only, and a small library
+(`TodoRepository`, `TodoItem`, `TodoClaims`, `TodoIds`, `AgentSession`) that an application may
+legitimately read at runtime. A page listing your own items and who holds what is an obvious
+thing to build, and both consumers of this package built one — discovered by Filament in
+production, which fatals if the classes aren't installed. `require-dev` is a tightening
+available only when the commands are the sole consumer; it is actively wrong the moment
+anything in the app reads the items.
+
 ## Configuration
 
 Defaults to `todo/` and `TODO.md` at the project root, with registries under the main tree's
@@ -90,6 +110,10 @@ php artisan vendor:publish --tag=todo-items-config
 composer install
 vendor/bin/phpunit
 ```
+
+The gating tests assert *membership* as well as behaviour: a sixth command that lands in
+`src/Commands` without extending `TodoCommand` fails the suite, because nothing about adding a
+file to a directory announces that the directory has a contract.
 
 The suite works entirely on temp trees — these classes write and delete files, and a test
 that reached the real list would rewrite the items it was run to protect.

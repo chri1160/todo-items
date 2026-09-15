@@ -33,6 +33,27 @@ return [
     |
     */
 
+    /*
+    |--------------------------------------------------------------------------
+    | Where these commands may run
+    |--------------------------------------------------------------------------
+    |
+    | Every command writes to the repository's working tree, so there is no
+    | deployed environment where running one can do anything: the tree is
+    | read-only at best, and where it isn't, the edit is discarded by the next
+    | deploy while the operator is told it worked. Outside these environments the
+    | commands are not hidden but absent — dropped during registration, so
+    | `artisan todo:done` reports an undefined command. See the TodoCommand base
+    | class.
+    |
+    | This gate is why plain `require` is the right install rather than
+    | `require-dev`: the package also ships a small library an application may
+    | read at runtime, and both known consumers render a page over the items.
+    |
+    */
+
+    'environments' => ['local', 'testing'],
+
     'ids' => null,
 
     'claims' => null,

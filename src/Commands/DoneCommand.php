@@ -2,7 +2,6 @@
 
 namespace Timot\TodoItems\Commands;
 
-use Illuminate\Console\Command;
 use Timot\TodoItems\TodoClaims;
 use Timot\TodoItems\TodoItem;
 use Timot\TodoItems\TodoRepository;
@@ -16,7 +15,7 @@ use Timot\TodoItems\TodoRepository;
  * to `Done` on its own. The item keeps its original `section`, so what was
  * closed out of which area stays on the record.
  */
-class DoneCommand extends Command
+class DoneCommand extends TodoCommand
 {
     protected $signature = 'todo:done
         {id* : Item id(s), with or without leading zeros}

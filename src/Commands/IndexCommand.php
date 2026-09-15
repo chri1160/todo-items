@@ -2,7 +2,6 @@
 
 namespace Timot\TodoItems\Commands;
 
-use Illuminate\Console\Command;
 use Timot\TodoItems\TodoItem;
 use Timot\TodoItems\TodoParser;
 use Timot\TodoItems\TodoRepository;
@@ -16,7 +15,7 @@ use Timot\TodoItems\TodoRepository;
  * an item — for a person in a hurry, and for an agent whose context predates
  * this tooling — and no edit is ever lost to a regenerate.
  */
-class IndexCommand extends Command
+class IndexCommand extends TodoCommand
 {
     protected $signature = 'todo:index {--dry-run}';
 

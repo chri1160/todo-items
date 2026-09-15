@@ -2,7 +2,6 @@
 
 namespace Timot\TodoItems\Commands;
 
-use Illuminate\Console\Command;
 use Timot\TodoItems\TodoItem;
 use Timot\TodoItems\TodoRepository;
 
@@ -17,7 +16,7 @@ use function Laravel\Prompts\text;
  * conversation can cite, where "the promotion-cutoff item" was only ever a
  * description that drifted as the item was reworded.
  */
-class NewCommand extends Command
+class NewCommand extends TodoCommand
 {
     protected $signature = 'todo:new
         {title? : The item title (markdown allowed)}

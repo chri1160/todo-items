@@ -2,7 +2,6 @@
 
 namespace Timot\TodoItems\Commands;
 
-use Illuminate\Console\Command;
 use Illuminate\Support\Str;
 use Timot\TodoItems\Support\AgentSession;
 use Timot\TodoItems\TodoClaims;
@@ -19,7 +18,7 @@ use Timot\TodoItems\TodoRepository;
  * a prompt. A named command is one stable prefix, so `todo:*` covers reading
  * the list forever.
  */
-class ListCommand extends Command
+class ListCommand extends TodoCommand
 {
     protected $signature = 'todo:list
         {--s|section= : Only sections whose name contains this (case-insensitive)}
