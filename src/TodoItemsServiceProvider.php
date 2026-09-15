@@ -40,6 +40,22 @@ class TodoItemsServiceProvider extends ServiceProvider
 
     public function boot(): void
     {
+        // Views for the optional Filament page, registered for **every** request and
+        // not just console ones. The page is rendered over HTTP and nowhere else, so
+        // the console guard below is precisely the wrong side of the line for it: a
+        // browser got `No hint path defined for [todo-items]` while every test passed,
+        // because PHPUnit runs in console and `runningInConsole()` is therefore true
+        // in the one place anybody would have looked.
+        //
+        // The page itself is deliberately NOT registered: see TodoListPage. A page this
+        // package added to a panel could not be made conditional by the project, and
+        // conditional discovery is what allows this package to be require-dev and
+        // therefore absent in production.
+        $this->loadViewsFrom(__DIR__.'/../resources/views', 'todo-items');
+
+        // Everything below is console-only on purpose: commands are gated per
+        // environment by TodoCommand, and `publishes()` exists for `vendor:publish`,
+        // which is a console command by definition.
         if (! $this->app->runningInConsole()) {
             return;
         }
@@ -55,16 +71,6 @@ class TodoItemsServiceProvider extends ServiceProvider
         $this->publishes([
             __DIR__.'/../config/todo-items.php' => config_path('todo-items.php'),
         ], 'todo-items-config');
-
-        // Views for the optional Filament page. Loaded unconditionally because
-        // a view namespace costs nothing when unused, and registering it here
-        // means a subclass works without the consumer wiring anything.
-        //
-        // The page itself is deliberately NOT registered: see TodoListPage. A
-        // page this package added to a panel could not be made conditional by
-        // the project, and conditional discovery is what allows this package to
-        // be require-dev and therefore absent in production.
-        $this->loadViewsFrom(__DIR__.'/../resources/views', 'todo-items');
 
         $this->publishes([
             __DIR__.'/../resources/views' => resource_path('views/vendor/todo-items'),
