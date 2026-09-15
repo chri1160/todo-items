@@ -268,9 +268,59 @@ class TodoRepository
      */
     private function linkFor(TodoItem $item): string
     {
-        $relative = str_replace(dirname($this->indexPath()).'/', '', $this->dir());
+        $relative = self::relativePath(dirname($this->indexPath()), $this->dir());
 
-        return $relative.'/'.$item->filename();
+        return ($relative === '' ? '' : $relative.'/').$item->filename();
+    }
+
+    /**
+     * The path to $target as written from inside $from, with `../` where needed.
+     *
+     * This was a prefix strip, which is the same answer whenever the items sit
+     * under the index's own directory and an **absolute host path** whenever they
+     * do not — silently, into a generated markdown file that people read and
+     * click. `directory` and `index` are separately configurable, so the config
+     * permitted a layout the renderer could not express; keeping a `docs/TODO.md`
+     * over a root `todo/` is an ordinary thing to want, so the fix is to express
+     * it rather than to forbid it.
+     */
+    private static function relativePath(string $from, string $target): string
+    {
+        $from = self::segments($from);
+        $target = self::segments($target);
+
+        while ($from !== [] && $target !== [] && $from[0] === $target[0]) {
+            array_shift($from);
+            array_shift($target);
+        }
+
+        return implode('/', [...array_fill(0, count($from), '..'), ...$target]);
+    }
+
+    /**
+     * A path as its meaningful segments, with `.` dropped and `..` resolved.
+     *
+     * @return list<string>
+     */
+    private static function segments(string $path): array
+    {
+        $segments = [];
+
+        foreach (explode('/', str_replace('\\', '/', $path)) as $part) {
+            if ($part === '' || $part === '.') {
+                continue;
+            }
+
+            if ($part === '..') {
+                array_pop($segments);
+
+                continue;
+            }
+
+            $segments[] = $part;
+        }
+
+        return $segments;
     }
 
     public function slugify(string $title): string
