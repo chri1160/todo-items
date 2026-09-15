@@ -165,8 +165,7 @@ vendor/bin/phpunit
 ```
 
 Filament is a dev dependency here so the page's tests can run; those tests skip if it is absent.
-Note that `filament/filament` is a paid, authenticated Composer repository, so running the full
-suite needs credentials in `auth.json`.
+Everything resolves from Packagist, so a clone needs no credentials.
 
 The gating tests assert *membership* as well as behaviour: a sixth command that lands in
 `src/Commands` without extending `TodoCommand` fails the suite, because nothing about adding a
