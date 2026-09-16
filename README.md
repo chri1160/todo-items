@@ -137,6 +137,17 @@ production install — a gate that runs after the fatal is not a gate. Note also
 `discoverPages()` is typed `string $in`, so the obvious "pass null in production" is a TypeError
 rather than a no-op; `Panel::when()` is the seam.
 
+The subclass also owns its placement in the panel. The base sets a label, a title and
+`slug = 'todos'` — the slug is fixed rather than derived, because Filament would otherwise
+slugify the subclass name and a project that called its subclass anything but `Todos` would
+silently get a different URL. It sets **no** navigation group: group names mean nothing outside
+the panel that defines them, so that belongs in the subclass.
+
+```php
+protected static string|UnitEnum|null $navigationGroup = 'Other Tools';
+protected static ?int $navigationSort = 100;
+```
+
 Two hooks:
 
 - **`canAccess()`** has no sensible default, so the base returns **false**. Forget it and the page
@@ -144,7 +155,15 @@ Two hooks:
   fails silently and in the dangerous direction. (Abstract would be better; PHP forbids
   re-declaring an inherited concrete method as abstract.)
 - **`icons()`** returns five roles — `page`, `available`, `claimed`, `done`, `view` — defaulting to
-  Heroicons. Override it to map them onto a project's own icon registry.
+  Heroicons. Override it to map them onto a project's own icon registry, or spread the defaults to
+  change just one:
+
+  ```php
+  protected static function icons(): array
+  {
+      return [...parent::icons(), 'view' => Heroicon::OutlinedMagnifyingGlass];
+  }
+  ```
 
 Views publish with `--tag=todo-items-views` if a project wants to change the markup.
 

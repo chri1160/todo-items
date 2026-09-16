@@ -60,6 +60,25 @@ class FilamentPageTest extends TestCase
         TestTodoPage::$allowed = true;
     }
 
+    public function test_no_project_specific_navigation_leaks_into_the_base(): void
+    {
+        $reflect = new ReflectionClass(TodoListPage::class);
+
+        // `Miscellaneous` shipped in v1.2.0 — the navigation group of the one
+        // project the page was extracted from. A group name means nothing in
+        // another panel, so every consumer had to override it, and a default
+        // every consumer must replace is not a default.
+        $this->assertNull(
+            $reflect->getProperty('navigationGroup')->getDefaultValue(),
+            'the base must not place the page in a group only one panel has',
+        );
+
+        // The slug is the opposite case and is fixed on purpose: without it
+        // Filament slugifies the subclass name, so a consumer that named its
+        // subclass differently would silently change its own URL.
+        $this->assertSame('todos', $reflect->getProperty('slug')->getDefaultValue());
+    }
+
     public function test_icons_default_to_heroicons_and_are_overridable(): void
     {
         $icons = $this->invokeIcons(TestTodoPage::class);
