@@ -7,6 +7,7 @@ use Timot\TodoItems\Support\AgentSession;
 use Timot\TodoItems\TodoClaims;
 use Timot\TodoItems\TodoItem;
 use Timot\TodoItems\TodoRepository;
+use Timot\TodoItems\TodoWorktrees;
 
 /**
  * Take an item, so no other agent starts it.
@@ -19,6 +20,13 @@ use Timot\TodoItems\TodoRepository;
  *
  * Claiming is not assignment by a human, and it is not a lock on the files: it
  * is an announcement, so the next agent looks further down the list.
+ *
+ * An announcement that expires, though — which is why the successful claim ends by
+ * naming a worktree. A claim covers the minutes before the work starts and then goes
+ * stale under an agent that is still working; a worktree carrying the id holds the item
+ * for as long as the branch is open and releases it by disappearing ({@see
+ * TodoWorktrees}). The package cannot make the harness name a worktree that way, so it
+ * asks, at the one moment the id is on screen anyway.
  */
 class ClaimCommand extends TodoCommand
 {
@@ -31,7 +39,7 @@ class ClaimCommand extends TodoCommand
 
     protected $description = 'Claim a TODO item so concurrent agents pick a different one';
 
-    public function handle(TodoRepository $repository, TodoClaims $claims): int
+    public function handle(TodoRepository $repository, TodoClaims $claims, TodoWorktrees $worktrees): int
     {
         $id = $this->argument('id') === null
             ? null
@@ -43,7 +51,7 @@ class ClaimCommand extends TodoCommand
 
         try {
             $item = $id === null
-                ? $repository->nextAvailable($claims, (string) $this->option('section'))
+                ? $repository->nextAvailable($claims, (string) $this->option('section'), $worktrees)
                 : $repository->find($id);
         } catch (RuntimeException $e) {
             // A mistyped id is an ordinary slip, not a crash worth a stack trace.
@@ -53,7 +61,11 @@ class ClaimCommand extends TodoCommand
         }
 
         if ($item === null) {
-            $this->components->warn('Nothing available — every open item is claimed.');
+            // Worded off what was actually skipped: a project with no worktrees carrying
+            // ids gets the sentence it has always got.
+            $this->components->warn($worktrees->inProgress() === []
+                ? 'Nothing available — every open item is claimed.'
+                : 'Nothing available — every open item is claimed or in a worktree.');
             $this->line('  <fg=gray>`todo:list --status=claimed` shows who holds what.</>');
 
             return self::SUCCESS;
@@ -82,6 +94,15 @@ class ClaimCommand extends TodoCommand
 
         $this->components->info("Claimed {$item->reference()} — {$item->title}");
         $this->line('  <fg=gray>'.$repository->dir().'/'.$item->filename().'</>');
+
+        // Only reachable for a named id: the id-less form skips anything a worktree is
+        // already on, so it never lands here.
+        $onIt = $worktrees->nameFor($item->id);
+
+        $this->line($onIt !== null
+            ? '  <fg=yellow>A worktree is already on this one: `'.$onIt.'`. If it is not yours, release the item and take another.</>'
+            : '  <fg=gray>Work it in a worktree named `'.TodoWorktrees::suggestedName($item).'` — an id in the name holds the item for as long as the branch is open, where a claim goes stale in '.TodoClaims::STALE_HOURS.'h.</>');
+
         $this->line('  <fg=gray>Release with `todo:claim '.$item->id.' --release`; `todo:done '.$item->id.'` releases it too.</>');
 
         if ($this->option('body') && $item->body !== '') {

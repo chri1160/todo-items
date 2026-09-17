@@ -95,15 +95,20 @@ class TodoRepository
     }
 
     /**
-     * The next open item nobody is holding, in priority order.
+     * The next open item nobody is holding and no worktree is working on, in
+     * priority order.
      *
      * Claims are passed in rather than resolved here: the repository's whole
      * subject is the files on disk, and a claim is deliberately not one of them
-     * ({@see TodoClaims}).
+     * ({@see TodoClaims}). Worktrees arrive the same way and for the same reason,
+     * and they are optional because the answer without them is the answer this
+     * method has always given — a project whose worktrees carry no ids, or none at
+     * all, sees no change at all ({@see TodoWorktrees}).
      */
-    public function nextAvailable(TodoClaims $claims, ?string $section = null): ?TodoItem
+    public function nextAvailable(TodoClaims $claims, ?string $section = null, ?TodoWorktrees $worktrees = null): ?TodoItem
     {
         $held = $claims->all();
+        $busy = $worktrees?->inProgress() ?? [];
 
         return $this->prioritized()
             ->where('status', TodoItem::STATUS_OPEN)
@@ -113,7 +118,7 @@ class TodoRepository
                     fn (TodoItem $item) => Str::contains($item->section, $section, ignoreCase: true),
                 ),
             )
-            ->first(fn (TodoItem $item) => ! isset($held[$item->id]));
+            ->first(fn (TodoItem $item) => ! isset($held[$item->id]) && ! isset($busy[$item->id]));
     }
 
     public function find(int $id): TodoItem

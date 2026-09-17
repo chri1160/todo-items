@@ -31,6 +31,11 @@ class TodoItemsServiceProvider extends ServiceProvider
             $this->path('todo-items.claims'),
         ));
 
+        // No configurable path: the worktree bookkeeping is git's own, under the main
+        // tree's `.git`, so there is nothing to point elsewhere — only a seam for tests
+        // to hand it a temp tree.
+        $this->app->singleton(TodoWorktrees::class, fn () => new TodoWorktrees);
+
         $this->app->singleton(TodoRepository::class, fn ($app) => new TodoRepository(
             $this->path('todo-items.directory'),
             $this->path('todo-items.index'),
