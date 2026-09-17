@@ -29,6 +29,21 @@ use Timot\TodoItems\Support\Worktree;
  * being offered to anyone and no one is working on it. There is no liveness
  * signal available here (a session is not a running process), so age is the
  * only one there is.
+ *
+ * Which bounds what a claim can honestly be asked to do, and the bound is hours
+ * rather than days. Nothing refreshes the stamp, so at `STALE_HOURS` an item
+ * held by an agent still working on it returns to the pool, silently — and
+ * raising the number does not fix that, it swaps it for the opposite failure:
+ * the stamp outlives the session that wrote it ({@see AgentSession} keys a
+ * session, and the same agent resuming tomorrow is a different holder), so the
+ * item reads `held by a3f9c1d2 (26h)` and is blocked by nobody for days. Eight
+ * hours is the least-bad point on a curve, not a tuning choice.
+ *
+ * So the long half of the job belongs to evidence this class does not have:
+ * {@see TodoWorktrees} reads the worktree an agent is actually working in,
+ * which is shared rather than per-session and disappears when the branch lands.
+ * What is left here is the job a registry is good at — the minutes between
+ * `todo:claim` and a worktree existing, which no filesystem signal can cover.
  */
 class TodoClaims
 {

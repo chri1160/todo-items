@@ -7,6 +7,7 @@ use Timot\TodoItems\Support\AgentSession;
 use Timot\TodoItems\TodoClaims;
 use Timot\TodoItems\TodoItem;
 use Timot\TodoItems\TodoRepository;
+use Timot\TodoItems\TodoWorktrees;
 
 /**
  * Prints the TODO list, filtered.
@@ -28,7 +29,7 @@ class ListCommand extends TodoCommand
 
     protected $description = 'List TODO items, filtered by section and status';
 
-    public function handle(TodoRepository $repository, TodoClaims $claims): int
+    public function handle(TodoRepository $repository, TodoClaims $claims, TodoWorktrees $worktrees): int
     {
         $status = strtolower((string) $this->option('status'));
         $valid = ['open', 'claimed', 'available', 'done', 'all'];
@@ -44,6 +45,15 @@ class ListCommand extends TodoCommand
         // it would read as deleted, and the whole point is to see who has what.
         $held = $claims->all();
 
+        // A worktree carrying an item's id is the other way an item is taken, and the
+        // durable one ({@see TodoWorktrees}). It is marked separately from a claim
+        // rather than folded into it because the two say different things: a claim is
+        // an eight-hour announcement by a named session, a worktree is a branch that
+        // exists. `available` and `claimed` stay complements — whatever is not offered
+        // to the next agent is listed as taken, with the reason it was taken visible —
+        // so neither filter can quietly lose an item between them.
+        $busy = $worktrees->inProgress();
+
         $needle = trim((string) $this->option('section'));
         $limit = max(0, (int) $this->option('limit'));
 
@@ -51,10 +61,10 @@ class ListCommand extends TodoCommand
             ->when(in_array($status, ['open', 'done'], true), fn ($items) => $items->where('status', $status))
             ->when($status === 'claimed', fn ($items) => $items
                 ->where('status', TodoItem::STATUS_OPEN)
-                ->filter(fn (TodoItem $item) => isset($held[$item->id])))
+                ->filter(fn (TodoItem $item) => isset($held[$item->id]) || isset($busy[$item->id])))
             ->when($status === 'available', fn ($items) => $items
                 ->where('status', TodoItem::STATUS_OPEN)
-                ->filter(fn (TodoItem $item) => ! isset($held[$item->id])))
+                ->filter(fn (TodoItem $item) => ! isset($held[$item->id]) && ! isset($busy[$item->id])))
             ->when($needle !== '', fn ($items) => $items->filter(
                 fn (TodoItem $item) => Str::contains($item->section, $needle, ignoreCase: true),
             ));
@@ -92,9 +102,10 @@ class ListCommand extends TodoCommand
                 }
 
                 $claim = $held[$item->id] ?? null;
+                $worktree = $busy[$item->id] ?? null;
 
                 $this->line(sprintf(
-                    '  <fg=gray>%3d</>  <fg=yellow>%s</>  %s%s%s',
+                    '  <fg=gray>%3d</>  <fg=yellow>%s</>  %s%s%s%s',
                     $item->position,
                     $item->reference(),
                     Str::limit($item->title, 110),
@@ -104,6 +115,7 @@ class ListCommand extends TodoCommand
                         AgentSession::isSelf($claim['by']) ? 'you' : $claim['by'],
                         $claims->ageInHours($claim),
                     ),
+                    $worktree === null ? '' : " <fg=green>[in progress: {$worktree}]</>",
                 ));
 
                 if ($this->option('body') && $item->body !== '') {
