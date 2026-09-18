@@ -23,6 +23,34 @@ Anything not yet worth prioritising.
 
 That file and the items are all that lives in the consuming repository. Everything else is here.
 
+One git setting is worth adding at the same time. `TODO.md` is generated *and committed*, so
+two agents closing two different items both rewrite it, and git — which has no idea the file is
+derived — conflicts on the merge. Any repository with two agents in it meets this almost at
+once: one project hit it four times in a single afternoon, every time as the only conflicted
+file and every time fixed by `artisan todo:index` and carrying on. One line in the repository's
+`.gitattributes` removes it:
+
+```
+TODO.md merge=union
+```
+
+That the driver is **built into git** is the whole point, not an implementation detail. The
+attribute is the entire mechanism, so it travels in a committed file and works in a clone that
+has never been configured for it. A custom driver — `merge=todo` plus a `merge.todo.driver` in
+git config — puts half the mechanism in each clone's local config, and an attribute whose driver
+is missing does not fail loudly: git falls back to the ordinary conflict, which is the thing the
+line was added to prevent. (Match the pattern to your own path if you have moved the index via
+the config below.)
+
+Union is safe for *this* file, not as a habit. The index is a fixed header plus one row per
+item, with no counts, totals or generated-on line that two sides would rewrite to different
+values, so there is only ever a set of rows to reconcile. Where it is imperfect it is cosmetic
+and bounded: union resolves a conflicting block by keeping both sides of it, so when two agents
+touch **adjacent** rows a row one side deleted can survive the merge, and an item then appears
+under both its section and `Done`. Rows further apart merge exactly as they should. And the item
+files are the truth — `todo:index` rewrites the index from them — so the worst case is an index
+that reads wrong until the next regenerate, never anything lost.
+
 ## Commands
 
 | | |
