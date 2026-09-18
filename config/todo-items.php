@@ -21,6 +21,42 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Who regenerates the index
+    |--------------------------------------------------------------------------
+    |
+    | `todo:new` and `todo:done` rewrite `index` as they go, which is what keeps
+    | it honest in a checkout. It is also a generated file under version control,
+    | so in a repository whose rule is one branch per item, every branch rewrites
+    | the same few lines of `## Done` and every second pull request conflicts.
+    |
+    | `TODO.md merge=union` in `.gitattributes` settles that for git itself —
+    | merge, rebase, pull — and does nothing for GitHub, whose mergeability check
+    | and merge button do not apply the attribute: a branch that `git merge-tree`
+    | resolves cleanly is still reported CONFLICTING on the pull request, and no
+    | amount of local hygiene clears it.
+    |
+    | So a project can take the job off branches altogether. Set this false and
+    | the commands stop writing the index; `todo:index` still writes it when
+    | asked, and the default branch regenerates and commits after each merge —
+    | a CI job running that one command. No branch then touches the file, so
+    | there is nothing for two branches to conflict over.
+    |
+    | The cost, and it is real: a working copy's index is only as fresh as the
+    | last merge. `todo:list` reads the item files rather than the index, so what
+    | goes stale is the rendered file, not what the commands tell you. Leave this
+    | true in a repository where that trade isn't worth making.
+    |
+    | Deliberately not an `env()` read. The setting has to hold for every clone
+    | and every agent at once, and a `.env` one machine is missing puts exactly
+    | that machine back to writing the file nobody else writes — which is the
+    | conflict again, from the one checkout least likely to notice.
+    |
+    */
+
+    'auto_index' => true,
+
+    /*
+    |--------------------------------------------------------------------------
     | Coordination registries
     |--------------------------------------------------------------------------
     |

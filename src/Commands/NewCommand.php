@@ -55,9 +55,12 @@ class NewCommand extends TodoCommand
         );
 
         $path = $repository->save($item);
-        $repository->writeIndex();
 
         $this->components->info("Created {$item->reference()} — {$path}");
+
+        // After the confirmation, not before it: where the regenerate is switched
+        // off, the note saying so belongs under the line it qualifies.
+        $this->regenerateIndex($repository);
 
         return self::SUCCESS;
     }

@@ -4,6 +4,7 @@ namespace Timot\TodoItems\Commands;
 
 use Illuminate\Console\Command;
 use Symfony\Component\Console\Application;
+use Timot\TodoItems\TodoRepository;
 
 /**
  * Base for every `todo:*` command. Development-only, structurally.
@@ -42,6 +43,43 @@ abstract class TodoCommand extends Command
 {
     /** Environments where the repository's working tree is the real one. */
     public const DEFAULT_ENVIRONMENTS = ['local', 'testing'];
+
+    /**
+     * Rewrite the index after a command changed an item — unless the project has
+     * taken that job off its branches.
+     *
+     * This write is *incidental*: the command was asked to create or close an
+     * item, and the index follows because a generated file that lags its source
+     * is worse than no file. That is also exactly why it is the write worth
+     * making optional. The item file a branch touches is its own; the index is
+     * the one file every branch rewrites, so it is the only place two unrelated
+     * branches can collide, and they collide on `## Done` because that is where
+     * every close inserts a row. Dropping the incidental write leaves branches
+     * with nothing in common ({@see config/todo-items.php}).
+     *
+     * `todo:index` is untouched by the flag and calls the repository directly.
+     * A command named for the index that declined to write one would be the
+     * wrong kind of obedience, and it is what the default branch runs after a
+     * merge to put the file back in step.
+     *
+     * The skip announces itself. The item file is already written by the time
+     * this runs, so a silent no-op reads as the close not having taken.
+     */
+    protected function regenerateIndex(TodoRepository $repository): void
+    {
+        $app = $this->getLaravel();
+
+        if ($app === null || $app->make('config')->get('todo-items.auto_index', true)) {
+            $repository->writeIndex();
+
+            return;
+        }
+
+        $this->line(
+            '  <fg=gray>Left '.basename($repository->indexPath()).' alone — `todo-items.auto_index` is off, '
+            .'so only the default branch regenerates it. `todo:index` rebuilds it here if you need to read it.</>',
+        );
+    }
 
     public function isEnabled(): bool
     {
