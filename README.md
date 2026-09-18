@@ -1,5 +1,7 @@
 # chri1160/todo-items
 
+[![tests](https://github.com/chri1160/todo-items/actions/workflows/tests.yml/badge.svg)](https://github.com/chri1160/todo-items/actions/workflows/tests.yml)
+
 A TODO list for a repository worked by several agents at once.
 
 One markdown file per item under `todo/`, `TODO.md` generated over them, ids that never
