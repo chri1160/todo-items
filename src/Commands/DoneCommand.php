@@ -58,7 +58,7 @@ class DoneCommand extends TodoCommand
             $this->components->info("Closed {$item->reference()} ({$date}) — {$item->title}");
         }
 
-        $repository->writeIndex();
+        $this->regenerateIndex($repository);
 
         return self::SUCCESS;
     }
