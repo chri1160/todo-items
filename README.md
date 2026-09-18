@@ -1,4 +1,4 @@
-# timot/todo-items
+# chri1160/todo-items
 
 A TODO list for a repository worked by several agents at once.
 
@@ -8,7 +8,8 @@ actually work in — so two agents don't start the same thing. Five `todo:*` art
 over it.
 
 ```
-composer require timot/todo-items
+composer config repositories.todo-items vcs https://github.com/chri1160/todo-items.git
+composer require chri1160/todo-items
 ```
 
 Then create `todo/_index.md` with the sections you want, in priority order:

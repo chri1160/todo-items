@@ -1,5 +1,5 @@
 {
-    "name": "timot/todo-items",
+    "name": "chri1160/todo-items",
     "description": "A file-backed TODO list for repositories worked by several agents at once: one item per file, a generated index, ids that never collide across branches, and claims so two agents don't start the same thing.",
     "type": "library",
     "license": "MIT",
